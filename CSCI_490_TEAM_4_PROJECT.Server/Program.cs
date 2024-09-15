@@ -1,5 +1,9 @@
 using CSCI_490_TEAM_4_PROJECT.Server.Data;
+using CSCI_490_TEAM_4_PROJECT.Server.Repository;
+using CSCI_490_TEAM_4_PROJECT.Server.Services;
 using Microsoft.EntityFrameworkCore;
+using MySql.EntityFrameworkCore.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using MySql.Data.MySqlClient;
 using YourNamespace.Utilities;
 
@@ -10,6 +14,8 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySQL(builder.Configuration.GetConnectionString("Database")));
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<UserService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -20,10 +26,7 @@ builder.Services.AddSwaggerGen();
 var connectionString = builder.Configuration.GetConnectionString("Database");
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("Connection string 'Database' is not found or empty.");
-    {
-        
-    }
+    throw new InvalidOperationException("----------Connection string 'Database' is not found or empty----------");
 }
 
 DatabaseUtils.TestDatabaseConnection(connectionString);
@@ -51,22 +54,3 @@ app.MapFallbackToFile("/index.html");
 
 app.Run();
 
-
-
-
-static void TestDatabaseConnection(string connectionString)
-{
-    using (var connection = new MySqlConnection(connectionString))
-    {
-        try
-        {
-            connection.Open();
-            Console.WriteLine("Connection to the database was successful!");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Connection to the database failed: {ex.Message}");
-            throw; // Re-throw the exception to stop the application if needed
-        }
-    }
-}
