@@ -13,20 +13,20 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
             _context = context;
         }
 
-        private DbSet<User> Users => _context.Set<User>();
+        private DbSet<UserInfo> Users => _context.Set<UserInfo>();
 
-        public async Task<User> GetUserById(int userId)
+        public async Task<UserInfo> GetUserById(int userId)
         {
             return await Users.FindAsync(userId);
         }
 
-        public async Task AddUser(User user)
+        public async Task AddUser(UserInfo user)
         {
             await Users.AddAsync(user);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateUser(User user)
+        public async Task UpdateUser(UserInfo user)
         {
             Users.Update(user);
             await _context.SaveChangesAsync();

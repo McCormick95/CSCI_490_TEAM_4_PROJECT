@@ -15,7 +15,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUserById(int id)
+    public async Task<ActionResult<UserInfo>> GetUserById(int id)
     {
         var user = await _userService.GetUserById(id);
         if (user == null) return NotFound();
@@ -23,14 +23,14 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> AddUser([FromBody] User user)
+    public async Task<ActionResult> AddUser([FromBody] UserInfo user)
     {
         await _userService.AddUser(user);
         return Ok();
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> UpdateUser(int id, [FromBody] User user)
+    public async Task<ActionResult> UpdateUser(int id, [FromBody] UserInfo user)
     {
         user.UserId = id;
         await _userService.UpdateUser(user);
