@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CSCI_490_TEAM_4_PROJECT.Server.Services;
 using CSCI_490_TEAM_4_PROJECT.Server.Models;
+using MySql.Data.MySqlClient;
 
 
 [ApiController]
@@ -25,8 +26,19 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> AddUser([FromBody] UserInfo user)
     {
-        await _userService.AddUser(user);
-        return Ok();
+        try
+        {
+            await _userService.AddUser(user);
+            return Ok();
+        }
+        catch(MySqlException)
+        {
+            return BadRequest("------DID NOT REACH DB------");
+        }
+        catch (Exception)
+        {
+            return BadRequest("------DID NOT POST------");
+        }
     }
 
     [HttpPut("{id}")]

@@ -19,7 +19,15 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
 
         public async Task AddUser(UserInfo user)
         {
-            await _userRepository.AddUser(user);
+            try
+            {
+                await _userRepository.AddUser(user);
+            }
+            catch (Exception ex)
+            {
+                // Print or log an error message
+                Console.WriteLine($"An exception occurred in UserServices @ AddUser(): {ex.Message}");
+            }
         }
 
         public async Task UpdateUser(UserInfo user)

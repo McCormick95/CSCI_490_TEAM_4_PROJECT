@@ -10,7 +10,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Data
         {
         }
 
-        public DbSet<UserInfo> Users { get; set; }
+        public DbSet<UserInfo> UserInfo { get; set; }
 
         //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         //{

@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace CSCI_490_TEAM_4_PROJECT.Server.Models
 {
     public class UserInfo
     {
         [Column("user_ID")]
+        [Key]
         public int UserId { get; set; }
 
         [Column("user_name")]
