@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CSCI_490_TEAM_4_PROJECT.Server.Models
 {
     public class Expense
     {
         [Column("expense_ID")]
+        [Key]
         public int ExpenseId { get; set; }
 
         [Column("year")]
