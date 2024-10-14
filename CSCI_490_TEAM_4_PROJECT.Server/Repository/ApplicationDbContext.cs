@@ -11,6 +11,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Data
         }
 
         public DbSet<UserInfo> UserInfo { get; set; }
+        public DbSet<Budget> Budget { get; set; }
 
         //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         //{
