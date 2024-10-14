@@ -26,6 +26,7 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> AddUser([FromBody] UserInfo user)
     {
+ //TODO: Add ID increment to DB, don't pass from user
         try
         {
             await _userService.AddUser(user);
