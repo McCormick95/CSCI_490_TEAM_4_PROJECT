@@ -23,6 +23,18 @@ builder.Services.AddScoped<BudgetServices>();
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<ExpenseServices>();
 
+builder.Services.AddScoped<IBudgetCatRepository, BudgetCatRepository>();
+builder.Services.AddScoped<BudgetCatServices>();
+
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<CategoryServices>();
+
+builder.Services.AddScoped<IUserBudgetRepository, UserBudgetRepository>();
+builder.Services.AddScoped<UserBudgetServices>();
+
+builder.Services.AddScoped<IUserExpenseRepository, UserExpenseRepository>();
+builder.Services.AddScoped<UserExpenseServices>();
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

@@ -7,6 +7,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Models
     {
         [Column("expense_ID")]
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ExpenseId { get; set; }
 
         [Column("year")]

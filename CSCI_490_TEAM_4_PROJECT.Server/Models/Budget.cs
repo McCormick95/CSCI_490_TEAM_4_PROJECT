@@ -7,6 +7,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Models
     {
         [Column("budget_ID")]
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int BudgetId { get; set; }
 
         [Column("year")]

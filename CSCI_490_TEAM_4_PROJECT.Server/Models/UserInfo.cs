@@ -7,6 +7,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Models
     {
         [Column("user_ID")]
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int UserId { get; set; }
 
         [Column("user_name")]
