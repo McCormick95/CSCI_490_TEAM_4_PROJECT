@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './AuthLayout.module.css';
+import styles from '@/features/login_page/AuthLayout.module.css';
 
 export default function RegisterForm() {
     return (
@@ -7,7 +7,7 @@ export default function RegisterForm() {
             <h2 className={styles.formTitle}>CREATE ACCOUNT:</h2>
 
             <div className={styles.formGroup}>
-                <div className={styles.formLabels}>
+                <div className={`${styles.formLabels} ${styles.register}`}>
                     <label htmlFor="registerEmail">Email:</label>
                     <label htmlFor="registerUsername">Username:</label>
                     <label htmlFor="registerPassword">Password:</label>

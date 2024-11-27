@@ -1,12 +1,12 @@
 import React from 'react';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
-import styles from './AuthLayout.module.css';
+import styles from '@/features/login_page/AuthLayout.module.css';
 
 export default function AuthLayout() {
     return (
         <main className={styles.authPage}>
-            <h1 className={styles.welcomeTitle}>WELCOME</h1>
+            <h1 className={styles.welcomeTitle}>Budget Tracker</h1>
 
             <div className={styles.authFormsContainer}>
                 <LoginForm />
