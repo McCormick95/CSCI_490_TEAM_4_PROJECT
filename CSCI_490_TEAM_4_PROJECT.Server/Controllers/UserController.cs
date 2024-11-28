@@ -27,19 +27,35 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> AddUser([FromBody] UserInfo user)
     {
- //TODO: Add ID increment to DB, don't pass from user
         try
         {
+            // Add some basic validation
+            if (string.IsNullOrEmpty(user.UserEmail) ||
+                string.IsNullOrEmpty(user.UserName) ||
+                string.IsNullOrEmpty(user.Password))
+            {
+                return BadRequest("All fields are required");
+            }
+
+            // Check if email already exists
+            var existingUser = await _userService.GetUserByEmail(user.UserEmail);
+            if (existingUser != null)
+            {
+                return BadRequest("Email already registered");
+            }
+
             await _userService.AddUser(user);
-            return Ok();
+            return Ok(new { message = "User registered successfully" });
         }
-        catch(MySqlException)
+        catch (MySqlException ex)
         {
-            return BadRequest("------DID NOT REACH DB------");
+            Console.WriteLine($"Database error: {ex.Message}");
+            return BadRequest("Database error occurred");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return BadRequest("------DID NOT POST------");
+            Console.WriteLine($"Registration error: {ex.Message}");
+            return BadRequest("Registration failed");
         }
     }
 
