@@ -1,42 +1,18 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext.jsx'
-import useFormValidation from '@/hooks/useFormValidation';
+import React from 'react';
 import styles from '@/features/login_page/AuthLayout.module.css';
+import PropTypes from 'prop-types';
 
-export default function LoginForm() {
-    const navigate = useNavigate();
-    const { login } = useAuth();
-    const [submitError, setSubmitError] = useState('');
-
-    const {
-        values,
-        errors,
-        handleChange,
-        validateForm
-    } = useFormValidation({
-        email: '',
-        password: ''
-    });
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setSubmitError('');
-
-        if (!validateForm('login')) {
-            return;
-        }
-
-        const result = await login(values.email, values.password);
-        if (result.success) {
-            navigate('/dashboard');
-        } else {
-            setSubmitError('Invalid email or password');
-        }
+export default function LoginForm({ values, errors, onInputChange }) {
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        onInputChange({
+            ...values,
+            [name]: value
+        });
     };
 
     return (
-        <form className={styles.formBox} onSubmit={handleSubmit}>
+        <div className={styles.formBox}>
             <h2 className={styles.formTitle}>LOG IN</h2>
 
             <div className={styles.formGroup}>
@@ -73,12 +49,18 @@ export default function LoginForm() {
                     </div>
                 </div>
             </div>
-
-            {submitError && <div className={styles.submitError}>{submitError}</div>}
-
-            <button type="submit" className={styles.submitButton}>
-                Login
-            </button>
-        </form>
+        </div>
     );
 }
+
+LoginForm.propTypes = {
+    values: PropTypes.shape({
+        email: PropTypes.string.isRequired,
+        password: PropTypes.string.isRequired
+    }).isRequired,
+    errors: PropTypes.shape({
+        email: PropTypes.string,
+        password: PropTypes.string
+    }).isRequired,
+    onInputChange: PropTypes.func.isRequired
+};

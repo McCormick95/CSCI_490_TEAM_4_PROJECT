@@ -2,6 +2,7 @@ import { createContext, useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 
 const AuthContext = createContext(null);
+const API_PREFIX = '/api';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
@@ -13,13 +14,16 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         setLoading(true);
         try {
-            const response = await fetch('/api/user/login', {
+            const response = await fetch(`${API_PREFIX}/user/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ email, password }),
+                credentials: 'include'
             });
+
+            console.log('Login response:', response);
 
             if (!response.ok) {
                 throw new Error('Login failed');
@@ -30,6 +34,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(data));
             return { success: true };
         } catch (error) {
+            console.error('Login error:', error);
             return { success: false, error: error.message };
         } finally {
             setLoading(false);
@@ -39,12 +44,17 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         setLoading(true);
         try {
-            const response = await fetch('/api/user', {
+            const response = await fetch(`${API_PREFIX}/user`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(userData),
+                body: JSON.stringify({
+                    userName: userData.username,
+                    userEmail: userData.email,
+                    password: userData.password
+                }),
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -54,6 +64,7 @@ export const AuthProvider = ({ children }) => {
             const data = await response.json();
             return { success: true, data };
         } catch (error) {
+            console.error('Registration error:', error);
             return { success: false, error: error.message };
         } finally {
             setLoading(false);
@@ -80,7 +91,6 @@ AuthProvider.propTypes = {
     children: PropTypes.node.isRequired,
 };
 
-
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -88,4 +98,3 @@ export const useAuth = () => {
     }
     return context;
 };
-

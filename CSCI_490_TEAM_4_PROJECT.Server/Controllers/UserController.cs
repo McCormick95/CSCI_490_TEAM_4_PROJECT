@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using CSCI_490_TEAM_4_PROJECT.Server.Services;
 using CSCI_490_TEAM_4_PROJECT.Server.Models;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Crypto.Generators;
 
 
 [ApiController]
@@ -39,6 +40,39 @@ public class UserController : ControllerBase
         catch (Exception)
         {
             return BadRequest("------DID NOT POST------");
+        }
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<object>> Login([FromBody] CSCI_490_TEAM_4_PROJECT.Server.Models.LoginRequest request)
+    {
+        try
+        {
+            var user = await _userService.GetUserByEmail(request.Email);
+
+            if (user == null)
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
+            // Return user data without password
+            return Ok(new
+            {
+                userId = user.UserId,
+                username = user.UserName,
+                email = user.UserEmail
+            });
+        }
+        catch (Exception ex)
+        {
+            // Add proper logging
+            Console.WriteLine($"Login error: {ex.Message}");
+            return StatusCode(500, "Error during login");
         }
     }
 

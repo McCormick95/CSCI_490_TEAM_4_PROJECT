@@ -20,6 +20,11 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
             return await Users.FindAsync(userId);
         }
 
+        public async Task<UserInfo> GetUserByEmail(string email)
+        {
+            return await _context.UserInfo.FirstOrDefaultAsync(u => u.UserEmail == email);
+        }
+
         public async Task AddUser(UserInfo user)
         {
             await Users.AddAsync(user);
@@ -41,6 +46,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
                 await _context.SaveChangesAsync();
             }
         }
+
     }
 
 }
