@@ -6,6 +6,7 @@ using MySql.EntityFrameworkCore.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using MySql.Data.MySqlClient;
 using YourNamespace.Utilities;
+using CSCI_490_TEAM_4_PROJECT.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        builder => builder
+            .WithOrigins("https://localhost:5173") // Your React app's URL
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials());
+});
 
 var connectionString = builder.Configuration.GetConnectionString("Database");
 if (string.IsNullOrEmpty(connectionString))
@@ -62,7 +72,12 @@ if (app.Environment.IsDevelopment())
 
 }
 
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
 app.UseHttpsRedirection();
+
+app.UseCors("AllowReact");
+app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
 

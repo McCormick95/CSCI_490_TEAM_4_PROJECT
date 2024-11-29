@@ -1,53 +1,23 @@
-import { useEffect, useState } from 'react';
 import './App.css';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import LoginPage from '@/features/login_page/AuthLayout';
+import Dashboard from '@/features/dashboard/Dashboard';
 
 function App() {
-    const [forecasts, setForecasts] = useState();
-
-    useEffect(() => {
-        populateWeatherData();
-    }, []);
-
-    const contents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
-
     return (
-        <div>
-            <h1 id="tableLabel">Weather forecast</h1>
-            <p>This component demonstrates fetching data from the server.</p>
-            {contents}
-        </div>
+        <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={
+                <ProtectedRoute>
+                    <Dashboard />
+                </ProtectedRoute>
+            } />
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            {/* Catch all other routes and redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
     );
-    
-    async function populateWeatherData() {
-        const response = await fetch('weatherforecast');
-        if (!response.ok) {
-            console.error('Failed to fetch data:', response.statusText);
-            return;
-        }
-        const data = await response.json();
-        setForecasts(data);
-    }
 }
-
 export default App;

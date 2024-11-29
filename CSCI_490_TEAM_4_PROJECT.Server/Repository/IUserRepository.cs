@@ -8,6 +8,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
         Task AddUser(UserInfo user);
         Task UpdateUser(UserInfo user);
         Task DeleteUser(int userId);
+        Task<UserInfo> GetUserByEmail(string email);
     }
 
 }

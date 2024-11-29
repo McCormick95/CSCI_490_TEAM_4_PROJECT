@@ -17,10 +17,17 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
             return await _userRepository.GetUserById(userId);
         }
 
+        public async Task<UserInfo> GetUserByEmail(string email)
+        {
+            return await _userRepository.GetUserByEmail(email);
+        }
+
         public async Task AddUser(UserInfo user)
         {
             try
             {
+                // Hash password before storing
+                user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
                 await _userRepository.AddUser(user);
             }
             catch (Exception ex)
