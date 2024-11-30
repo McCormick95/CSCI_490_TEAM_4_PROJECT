@@ -13,31 +13,31 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
             _context = context;
         }
 
-        private DbSet<BudgetCat> BudgetCats => _context.Set<BudgetCat>();
+        private DbSet<BudgetCat> BudgetCat => _context.Set<BudgetCat>();
 
-        public async Task<BudgetCat> GetBudgetCat(int budgetCatId)
+        public async Task<BudgetCat[]> GetBudgetCat(int budgetCatId)
         {
-            return await BudgetCats.FindAsync(budgetCatId);
+            return await _context.BudgetCat.Where(x => x.BudgetId == budgetCatId).ToArrayAsync();
         }
 
         public async Task AddBudgetCat(BudgetCat budgetCat)
         {
-            await BudgetCats.AddAsync(budgetCat);
+            await BudgetCat.AddAsync(budgetCat);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateBudgetCat(BudgetCat budgetCat)
         {
-            BudgetCats.Update(budgetCat);
+            BudgetCat.Update(budgetCat);
             await _context.SaveChangesAsync();
         }
 
         public async Task DeleteBudgetCat(int budgetCatId)
         {
-            var budgetCat = await BudgetCats.FindAsync(budgetCatId);
+            var budgetCat = await BudgetCat.FindAsync(budgetCatId);
             if (budgetCat != null)
             {
-                BudgetCats.Remove(budgetCat);
+                BudgetCat.Remove(budgetCat);
                 await _context.SaveChangesAsync();
             }
         }

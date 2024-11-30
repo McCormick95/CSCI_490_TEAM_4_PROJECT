@@ -15,9 +15,9 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
 
         private DbSet<UserBudget> UserBudget => _context.Set<UserBudget>();
 
-        public async Task<UserBudget> GetUserBudgetById(int userId)
+        public async Task<UserBudget[]> GetUserBudgetById(int userId)
         {
-            return await _context.UserBudget.FirstOrDefaultAsync(x => x.UserId == userId);
+            return await _context.UserBudget.Where(x => x.UserId == userId).ToArrayAsync();
         }
 
         public async Task AddUserBudget(UserBudget userBudget)

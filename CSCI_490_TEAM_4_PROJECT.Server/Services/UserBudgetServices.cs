@@ -12,7 +12,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
             _userBudgetRepository = userBudgetRepository;
         }
 
-        public async Task<UserBudget> GetUserBudgetById(int userId)
+        public async Task<UserBudget[]> GetUserBudgetById(int userId)
         {
             return await _userBudgetRepository.GetUserBudgetById(userId);
         }

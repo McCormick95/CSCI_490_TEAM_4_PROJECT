@@ -8,43 +8,54 @@ export const BudgetPage = ({ onBack }) => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900" />
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
+                        <ArrowLeft className="h-6 w-6" />
+                    </button>
+                    <h2 className="text-2xl font-bold">Budget Details</h2>
+                </div>
+                <div>Loading...</div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="text-center p-4">
-                <p className="text-red-500">Error loading budget data: {error}</p>
-                <button
-                    onClick={onBack}
-                    className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                    Go Back
-                </button>
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
+                        <ArrowLeft className="h-6 w-6" />
+                    </button>
+                    <h2 className="text-2xl font-bold">Budget Details</h2>
+                </div>
+                <div className="text-red-500">Error: {error}</div>
             </div>
         );
     }
 
-    if (!budgetData) {
+    if (!budgetData?.budgets || budgetData.budgets.length === 0) {
         return (
-            <div className="text-center p-4">
-                <p>No budget data available. Please set up your budget.</p>
-                <button
-                    onClick={onBack}
-                    className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                    Go Back
-                </button>
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
+                        <ArrowLeft className="h-6 w-6" />
+                    </button>
+                    <h2 className="text-2xl font-bold">Budget Details</h2>
+                </div>
+                <Card>
+                    <CardContent>
+                        <p className="text-center py-4">No budgets found. Create a budget to get started.</p>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
-    // Calculate remaining budget
-    const totalSpent = budgetData.categories.reduce((sum, cat) => sum + cat.amount, 0);
-    const remaining = budgetData.totalBudget - totalSpent;
+    const formatCurrency = (amount) => {
+        const safeAmount = Number(amount) || 0;
+        return `$${safeAmount.toFixed(2)}`;
+    };
 
     return (
         <div className="space-y-6">
@@ -55,38 +66,45 @@ export const BudgetPage = ({ onBack }) => {
                 <h2 className="text-2xl font-bold">Budget Details</h2>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Monthly Budget Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Budget</p>
-                                <p className="text-2xl font-bold">${budgetData.totalBudget}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Remaining</p>
-                                <p className={`text-2xl font-bold ${remaining < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                                    ${remaining}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            {budgetData.categories.map((category) => (
-                                <div
-                                    key={category.id}
-                                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                                >
-                                    <span>{category.name}</span>
-                                    <span className="font-medium">${category.amount}</span>
+            {budgetData.budgets.map((budget) => (
+                <Card key={budget.budgetId}>
+                    <CardHeader>
+                        <CardTitle>Budget for {budget.month}/{budget.year}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Monthly Income</p>
+                                    <p className="text-2xl font-bold">{formatCurrency(budget.monthIncome)}</p>
                                 </div>
-                            ))}
+                                <div>
+                                    <p className="text-sm text-gray-500">Allocated</p>
+                                    <p className="text-2xl font-bold">{formatCurrency(budget.allocatedAmount)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Remaining</p>
+                                    <p className="text-2xl font-bold">{formatCurrency(budget.remainingAmount)}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="font-semibold mb-2">Category Breakdown</h3>
+                                {(budget.categories || []).map((category) => (
+                                    <div
+                                        key={`${budget.budgetId}-${category?.categoryId || Math.random()}`}
+                                        className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                                    >
+                                        <span>{category?.name || 'Unnamed Category'}</span>
+                                        <span className="font-medium">
+                                            {formatCurrency(category?.amount)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            ))}
         </div>
     );
 };

@@ -1,7 +1,16 @@
 import PropTypes from 'prop-types';
 import { ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Legend
+} from 'recharts';
 import { useExpenseData } from '@/hooks/useExpenseData';
 
 export const ExpensesPage = ({ onBack }) => {
@@ -19,29 +28,31 @@ export const ExpensesPage = ({ onBack }) => {
         return (
             <div className="text-center p-4">
                 <p className="text-red-500">Error loading expense data: {error}</p>
-                <button
-                    onClick={onBack}
-                    className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
+                <button onClick={onBack} className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
                     Go Back
                 </button>
             </div>
         );
     }
 
-    if (!expenseData || expenseData.spendingTrends.length === 0) {
+    if (!expenseData?.categoryTrends || expenseData.categoryTrends.length === 0) {
         return (
             <div className="text-center p-4">
                 <p>No expense data available. Start by adding some expenses.</p>
-                <button
-                    onClick={onBack}
-                    className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                >
+                <button onClick={onBack} className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
                     Go Back
                 </button>
             </div>
         );
     }
+
+    const formatCurrency = (value) => `$${value.toFixed(2)}`;
+
+    // Ensure data is in the correct format for the chart
+    const chartData = expenseData.categoryTrends.map(item => ({
+        name: item.category,
+        amount: item.total
+    }));
 
     return (
         <div className="space-y-6">
@@ -54,40 +65,62 @@ export const ExpensesPage = ({ onBack }) => {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Expense Trends</CardTitle>
+                    <CardTitle>Expenses by Category</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={expenseData.spendingTrends}>
+                    {/* Fixed height container for the chart */}
+                    <div style={{ width: '100%', height: '400px' }}>
+                        <ResponsiveContainer>
+                            <BarChart
+                                data={chartData}
+                                margin={{
+                                    top: 20,
+                                    right: 30,
+                                    left: 60,
+                                    bottom: 60
+                                }}
+                            >
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis />
+                                <XAxis
+                                    dataKey="name"
+                                    angle={-45}
+                                    textAnchor="end"
+                                    height={80}
+                                    interval={0}
+                                />
+                                <YAxis
+                                    tickFormatter={formatCurrency}
+                                />
                                 <Tooltip
-                                    formatter={(value) => [`$${value}`, "Expenses"]}
+                                    formatter={(value) => formatCurrency(value)}
+                                    labelFormatter={(label) => `Category: ${label}`}
                                 />
-                                <Line
-                                    type="monotone"
-                                    dataKey="expenses"
-                                    stroke="#8884d8"
-                                    strokeWidth={2}
+                                <Legend />
+                                <Bar
+                                    dataKey="amount"
+                                    fill="#8884d8"
+                                    name="Amount"
                                 />
-                            </LineChart>
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
+
                     <div className="mt-6">
                         <h3 className="font-semibold mb-2">Recent Expenses</h3>
                         <div className="space-y-2">
-                            {expenseData.expenses.slice(0, 5).map((expense) => (
+                            {expenseData.expenses.map((expense) => (
                                 <div
                                     key={expense.id}
                                     className="flex items-center justify-between p-2 bg-gray-50 rounded"
                                 >
                                     <div>
                                         <span className="font-medium">{expense.description}</span>
-                                        <span className="text-sm text-gray-500 ml-2">({expense.date})</span>
+                                        <span className="text-sm text-gray-500 ml-2">({expense.category})</span>
+                                        <span className="text-sm text-gray-500 ml-2">{expense.date}</span>
                                     </div>
-                                    <span className="font-medium text-red-500">-${expense.amount}</span>
+                                    <span className="font-medium text-red-500">
+                                        {formatCurrency(expense.amount)}
+                                    </span>
                                 </div>
                             ))}
                         </div>
