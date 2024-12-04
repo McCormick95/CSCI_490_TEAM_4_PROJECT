@@ -12,7 +12,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
             _budgetCatRepository = budgetCatRepository;
         }
 
-        public async Task<BudgetCat> GetBudgetCatById(int budgetCat)
+        public async Task<BudgetCat[]> GetBudgetCatById(int budgetCat)
         {
             return await _budgetCatRepository.GetBudgetCat(budgetCat);
         }

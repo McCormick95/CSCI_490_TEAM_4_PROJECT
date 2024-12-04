@@ -15,7 +15,7 @@ public class UserExpenseController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<UserExpense>> GetUserExpenseById(int id)
+    public async Task<ActionResult<UserExpense[]>> GetUserExpenseById(int id)
     {
         var userExpense = await _userExpenseServices.GetUserExpenseById(id);
         if (userExpense == null) return NotFound();

@@ -15,9 +15,9 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
 
         private DbSet<UserExpense> UserExpense => _context.Set<UserExpense>();
 
-        public async Task<UserExpense> GetUserExpenseById(int userId)
+        public async Task<UserExpense[]> GetUserExpenseById(int userId)
         {
-            return await _context.UserExpense.FirstOrDefaultAsync(x => x.UserId == userId);
+            return await _context.UserExpense.Where(x => x.UserId == userId).ToArrayAsync();
         }
 
         public async Task AddUserExpense(UserExpense userExpense)

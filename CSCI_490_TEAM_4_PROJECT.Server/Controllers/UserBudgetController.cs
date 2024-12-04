@@ -15,7 +15,7 @@ public class UserBudgetController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<UserBudget>> GetUserBudgetById(int id)
+    public async Task<ActionResult<UserBudget[]>> GetUserBudgetById(int id)
     {
         var userBudget = await _userBudgetService.GetUserBudgetById(id);
         if (userBudget == null) return NotFound();

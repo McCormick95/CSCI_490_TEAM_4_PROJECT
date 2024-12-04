@@ -16,7 +16,7 @@ public class BudgetCatController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<BudgetCat>> GetBudgetCat(int id)
+    public async Task<ActionResult<BudgetCat[]>> GetBudgetCat(int id)
     {
         var budgetCat = await _budgetCatService.GetBudgetCatById(id);
         if (budgetCat == null) return NotFound();
