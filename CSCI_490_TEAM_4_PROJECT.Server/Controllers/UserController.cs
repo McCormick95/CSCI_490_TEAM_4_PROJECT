@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using CSCI_490_TEAM_4_PROJECT.Server.Services;
 using CSCI_490_TEAM_4_PROJECT.Server.Models;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Crypto.Generators;
 
 
 [ApiController]
@@ -26,19 +27,68 @@ public class UserController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> AddUser([FromBody] UserInfo user)
     {
- //TODO: Add ID increment to DB, don't pass from user
         try
         {
+            // Add some basic validation
+            if (string.IsNullOrEmpty(user.UserEmail) ||
+                string.IsNullOrEmpty(user.UserName) ||
+                string.IsNullOrEmpty(user.Password))
+            {
+                return BadRequest("All fields are required");
+            }
+
+            // Check if email already exists
+            var existingUser = await _userService.GetUserByEmail(user.UserEmail);
+            if (existingUser != null)
+            {
+                return BadRequest("Email already registered");
+            }
+
             await _userService.AddUser(user);
-            return Ok();
+            return Ok(new { message = "User registered successfully" });
         }
-        catch(MySqlException)
+        catch (MySqlException ex)
         {
-            return BadRequest("------DID NOT REACH DB------");
+            Console.WriteLine($"Database error: {ex.Message}");
+            return BadRequest("Database error occurred");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return BadRequest("------DID NOT POST------");
+            Console.WriteLine($"Registration error: {ex.Message}");
+            return BadRequest("Registration failed");
+        }
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<object>> Login([FromBody] CSCI_490_TEAM_4_PROJECT.Server.Models.LoginRequest request)
+    {
+        try
+        {
+            var user = await _userService.GetUserByEmail(request.Email);
+
+            if (user == null)
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            {
+                return Unauthorized("Invalid email or password");
+            }
+
+            // Return user data without password
+            return Ok(new
+            {
+                userId = user.UserId,
+                username = user.UserName,
+                email = user.UserEmail
+            });
+        }
+        catch (Exception ex)
+        {
+            // Add proper logging
+            Console.WriteLine($"Login error: {ex.Message}");
+            return StatusCode(500, "Error during login");
         }
     }
 
