@@ -14,6 +14,20 @@ public class BudgetController : ControllerBase
         _budgetService = budgetService;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Budget>>> GetAllBudgets()
+    {
+        try 
+        {
+            var budgets = await _budgetService.GetAllBudgets();
+            return Ok(budgets);
+        }
+        catch (Exception)
+        {
+            return NotFound();
+        }
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<Budget>> GetBudgetById(int id)
     {
@@ -28,7 +42,7 @@ public class BudgetController : ControllerBase
         try
         {
             await _budgetService.AddBudget(budget);
-            return Ok();
+            return Ok(budget);
         }
         catch (MySqlException)
         {
@@ -54,6 +68,5 @@ public class BudgetController : ControllerBase
         await _budgetService.DeleteBudget(id);
         return Ok();
     }
+
 }
-
-

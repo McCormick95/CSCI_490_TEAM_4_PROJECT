@@ -12,9 +12,14 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
             _expenseRepository = expenseRepository;
         }
 
-        public async Task<Expense> GetExpenseById(int expense)
+        public async Task<Expense> GetExpenseById(int expenseId)
         {
-            return await _expenseRepository.GetExpenseById(expense);
+            return await _expenseRepository.GetExpenseById(expenseId);
+        }
+
+        public async Task<IEnumerable<Expense>> GetAllExpenses()
+        {
+            return await _expenseRepository.GetAllExpenses();
         }
 
         public async Task AddExpense(Expense expense)
@@ -27,6 +32,7 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
             {
                 // Print or log an error message
                 Console.WriteLine($"An exception occurred in ExpenseServices @ AddExpense(): {ex.Message}");
+                throw;
             }
         }
 

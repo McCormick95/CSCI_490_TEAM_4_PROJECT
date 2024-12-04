@@ -1,11 +1,57 @@
-﻿#root {
-    max-width: 1280px;
+﻿.App {
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
-    text-align: center;
-}
-
-th, td {
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
+    padding: 20px;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+    margin: 20px auto;
+  }
+  
+  input {
+    padding: 8px;
+    margin: 5px 0;
+  }
+  
+  button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    margin: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  button:hover {
+    background-color: #45a049;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  
+  nav button {
+    background-color: #2196F3;
+    min-width: 120px;
+  }
+  
+  nav button:hover {
+    background-color: #1976D2;
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  li {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }

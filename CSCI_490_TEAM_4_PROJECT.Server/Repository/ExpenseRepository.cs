@@ -20,6 +20,11 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
             return await Expenses.FindAsync(expenseId);
         }
 
+        public async Task<IEnumerable<Expense>> GetAllExpenses()
+        {
+            return await Expenses.ToListAsync();
+        }
+
         public async Task AddExpense(Expense expense)
         {
             await Expenses.AddAsync(expense);

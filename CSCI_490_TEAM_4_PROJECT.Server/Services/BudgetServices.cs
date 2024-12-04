@@ -12,6 +12,11 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
             _budgetRepository = budgetRepository;
         }
 
+        public async Task<IEnumerable<Budget>> GetAllBudgets()
+        {
+            return await _budgetRepository.GetAllBudgets();
+        }
+
         public async Task<Budget> GetBudgetById(int budgetId)
         {
             return await _budgetRepository.GetBudgetById(budgetId);

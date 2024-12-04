@@ -3,7 +3,6 @@ using CSCI_490_TEAM_4_PROJECT.Server.Services;
 using CSCI_490_TEAM_4_PROJECT.Server.Models;
 using MySql.Data.MySqlClient;
 
-
 [ApiController]
 [Route("api/[controller]")]
 public class ExpenseController : ControllerBase
@@ -13,6 +12,13 @@ public class ExpenseController : ControllerBase
     public ExpenseController(ExpenseServices expenseServices)
     {
         _expenseServices = expenseServices;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Expense>>> GetAllExpenses()
+    {
+        var expenses = await _expenseServices.GetAllExpenses();
+        return Ok(expenses);
     }
 
     [HttpGet("{id}")]
@@ -31,13 +37,9 @@ public class ExpenseController : ControllerBase
             await _expenseServices.AddExpense(expense);
             return Ok();
         }
-        catch (MySqlException)
+        catch (Exception ex)
         {
-            return BadRequest("------DID NOT REACH DB------");
-        }
-        catch (Exception)
-        {
-            return BadRequest("------DID NOT POST------");
+            return BadRequest($"Error adding expense: {ex.Message}");
         }
     }
 
@@ -56,4 +58,3 @@ public class ExpenseController : ControllerBase
         return Ok();
     }
 }
-

@@ -13,7 +13,10 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
             _context = context;
         }
 
-        private DbSet<Budget> Budget => _context.Set<Budget>();
+        public async Task<IEnumerable<Budget>> GetAllBudgets()
+        {
+            return await _context.Budget.ToListAsync();
+        }
 
         public async Task<Budget> GetBudgetById(int budgetId)
         {
@@ -35,8 +38,11 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
         public async Task DeleteBudget(int budgetId)
         {
             var budget = await _context.Budget.FirstOrDefaultAsync(b => b.BudgetId == budgetId);
-            _context.Budget.Remove(budget);
-            await _context.SaveChangesAsync();
+            if (budget != null)
+            {
+                _context.Budget.Remove(budget);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
