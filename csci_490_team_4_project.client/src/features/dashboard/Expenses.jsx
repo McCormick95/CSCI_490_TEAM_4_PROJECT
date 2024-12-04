@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     BarChart,
@@ -12,9 +13,16 @@ import {
     Legend
 } from 'recharts';
 import { useExpenseData } from '@/hooks/useExpenseData';
+import { AddExpenseForm } from "@/features/dashboard/AddExpenseForm";
 
 export const ExpensesPage = ({ onBack }) => {
-    const { expenseData, loading, error } = useExpenseData();
+    const { expenseData, loading, error, refetch } = useExpenseData();
+    const [showAddForm, setShowAddForm] = useState(false);
+
+    const handleExpenseAdded = () => {
+        refetch();
+        setShowAddForm(false);
+    };
 
     if (loading) {
         return (
@@ -35,33 +43,42 @@ export const ExpensesPage = ({ onBack }) => {
         );
     }
 
-    if (!expenseData?.categoryTrends || expenseData.categoryTrends.length === 0) {
-        return (
-            <div className="text-center p-4">
-                <p>No expense data available. Start by adding some expenses.</p>
-                <button onClick={onBack} className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
-                    Go Back
-                </button>
-            </div>
-        );
-    }
-
     const formatCurrency = (value) => `$${value.toFixed(2)}`;
 
     // Ensure data is in the correct format for the chart
-    const chartData = expenseData.categoryTrends.map(item => ({
+    const chartData = expenseData?.categoryTrends?.map(item => ({
         name: item.category,
         amount: item.total
-    }));
+    })) || [];
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
-                    <ArrowLeft className="h-6 w-6" />
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
+                        <ArrowLeft className="h-6 w-6" />
+                    </button>
+                    <h2 className="text-2xl font-bold">Expense Analysis</h2>
+                </div>
+                <button
+                    onClick={() => setShowAddForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                    <Plus className="h-5 w-5" />
+                    Add Expense
                 </button>
-                <h2 className="text-2xl font-bold">Expense Analysis</h2>
             </div>
+
+            {showAddForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="w-full max-w-lg">
+                        <AddExpenseForm
+                            onExpenseAdded={handleExpenseAdded}
+                            onClose={() => setShowAddForm(false)}
+                        />
+                    </div>
+                </div>
+            )}
 
             <Card>
                 <CardHeader>
@@ -108,7 +125,7 @@ export const ExpensesPage = ({ onBack }) => {
                     <div className="mt-6">
                         <h3 className="font-semibold mb-2">Recent Expenses</h3>
                         <div className="space-y-2">
-                            {expenseData.expenses.map((expense) => (
+                            {expenseData?.expenses?.map((expense) => (
                                 <div
                                     key={expense.id}
                                     className="flex items-center justify-between p-2 bg-gray-50 rounded"
