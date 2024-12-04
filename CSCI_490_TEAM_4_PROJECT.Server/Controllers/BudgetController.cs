@@ -14,6 +14,20 @@ public class BudgetController : ControllerBase
         _budgetService = budgetService;
     }
 
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Budget>>> GetAllBudgets()
+    {
+        try 
+        {
+            var budgets = await _budgetService.GetAllBudgets();
+            return Ok(budgets);
+        }
+        catch (Exception)
+        {
+            return NotFound();
+        }
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<Budget>> GetBudgetById(int id)
     {
@@ -23,20 +37,26 @@ public class BudgetController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> AddBudget([FromBody] Budget budget)
+    public async Task<ActionResult<Budget>> AddBudget([FromBody] Budget budget)
     {
         try
         {
             await _budgetService.AddBudget(budget);
-            return Ok();
+            // Make sure we're returning the created budget with its ID
+            var createdBudget = await _budgetService.GetBudgetById(budget.BudgetId);
+            if (createdBudget == null)
+            {
+                return BadRequest(new { message = "Budget created but could not be retrieved" });
+            }
+            return Ok(createdBudget);  // This will ensure proper JSON serialization
         }
         catch (MySqlException)
         {
-            return BadRequest("------DID NOT REACH DB------");
+            return BadRequest(new { message = "Database error occurred" });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return BadRequest("------DID NOT POST------");
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -55,5 +75,3 @@ public class BudgetController : ControllerBase
         return Ok();
     }
 }
-
-

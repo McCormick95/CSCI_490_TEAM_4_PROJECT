@@ -13,31 +13,34 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Repository
             _context = context;
         }
 
-        private DbSet<Expense> Expenses => _context.Set<Expense>();
+        public async Task<IEnumerable<Expense>> GetAllExpenses()
+        {
+            return await _context.Expense.ToListAsync();
+        }
 
         public async Task<Expense> GetExpenseById(int expenseId)
         {
-            return await Expenses.FindAsync(expenseId);
+            return await _context.Expense.FindAsync(expenseId);
         }
 
         public async Task AddExpense(Expense expense)
         {
-            await Expenses.AddAsync(expense);
+            await _context.Expense.AddAsync(expense);
             await _context.SaveChangesAsync();
         }
 
         public async Task UpdateExpense(Expense expense)
         {
-            Expenses.Update(expense);
+            _context.Expense.Update(expense);
             await _context.SaveChangesAsync();
         }
 
         public async Task DeleteExpense(int expenseId)
         {
-            var expense = await Expenses.FindAsync(expenseId);
+            var expense = await _context.Expense.FindAsync(expenseId);
             if (expense != null)
             {
-                Expenses.Remove(expense);
+                _context.Expense.Remove(expense);
                 await _context.SaveChangesAsync();
             }
         }

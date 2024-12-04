@@ -16,5 +16,10 @@ namespace CSCI_490_TEAM_4_PROJECT.Server.Services
         {
             return await _categoryRepository.GetCategoryById(catId);
         }
+
+        public async Task<IEnumerable<Category>> GetAllCategories()
+        {
+            return await _categoryRepository.GetAllCategories();
+        }
     }
 }

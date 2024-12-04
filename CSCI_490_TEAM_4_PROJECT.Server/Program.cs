@@ -1,6 +1,7 @@
 using CSCI_490_TEAM_4_PROJECT.Server.Data;
 using CSCI_490_TEAM_4_PROJECT.Server.Repository;
 using CSCI_490_TEAM_4_PROJECT.Server.Services;
+using CSCI_490_TEAM_4_PROJECT.Server.Models;
 using Microsoft.EntityFrameworkCore;
 using MySql.EntityFrameworkCore.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,7 +70,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
 }
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
@@ -85,5 +85,43 @@ app.MapControllers();
 
 app.MapFallbackToFile("/index.html");
 
-app.Run();
+// Add category
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+    // Clear existing categories
+    //context.Category.RemoveRange(context.Category);
+    //context.SaveChanges();
+
+    // Check if any categories exist
+    if (!context.Category.Any())
+    {
+        var categories = new List<Category>
+        {
+            new Category { CatDesc = "Housing" },
+            new Category { CatDesc = "Transportation" },
+            new Category { CatDesc = "Food" },
+            new Category { CatDesc = "Utilities" },
+            new Category { CatDesc = "Insurance" },
+            new Category { CatDesc = "Healthcare" },
+            new Category { CatDesc = "Entertainment" },
+            new Category { CatDesc = "Personal Care" },
+            new Category { CatDesc = "Education" },
+            new Category { CatDesc = "Savings" }
+        };
+
+        foreach (var category in categories)
+        {
+            if (!context.Category.Any(c => c.CatDesc == category.CatDesc))
+            {
+                context.Category.Add(category);
+            }
+        }
+        
+        context.SaveChanges();
+        Console.WriteLine("Categories have been seeded successfully.");
+    }
+}
+
+app.Run();
