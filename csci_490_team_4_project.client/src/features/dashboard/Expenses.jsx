@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     BarChart,
@@ -19,6 +19,29 @@ export const ExpensesPage = ({ onBack }) => {
     const { expenseData, loading, error, refetch } = useExpenseData();
     const [showAddForm, setShowAddForm] = useState(false);
 
+    const handleDeleteExpense = async (expenseId) => {
+        if (!window.confirm('Are you sure you want to delete this expense?')) {
+            return;
+        }
+    
+        try {
+            const response = await fetch(`/api/expense/${expenseId}`, {
+                method: 'DELETE',
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to delete expense');
+            }
+    
+            // Refresh the expenses list using the existing refetch function
+            refetch();
+        } catch (err) {
+            console.error('Delete error:', err);
+            setError('Failed to delete expense');
+        }
+    };
+    
+    
     const handleExpenseAdded = () => {
         refetch();
         setShowAddForm(false);
@@ -125,21 +148,29 @@ export const ExpensesPage = ({ onBack }) => {
                     <div className="mt-6">
                         <h3 className="font-semibold mb-2">Recent Expenses</h3>
                         <div className="space-y-2">
-                            {expenseData?.expenses?.map((expense) => (
-                                <div
-                                    key={expense.id}
-                                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                                >
-                                    <div>
-                                        <span className="font-medium">{expense.description}</span>
-                                        <span className="text-sm text-gray-500 ml-2">({expense.category})</span>
-                                        <span className="text-sm text-gray-500 ml-2">{expense.date}</span>
-                                    </div>
+                        {expenseData?.expenses?.map((expense) => (
+                            <div
+                                key={expense.id}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                            >
+                                <div>
+                                    <span className="font-medium">{expense.description}</span>
+                                    <span className="text-sm text-gray-500 ml-2">({expense.category})</span>
+                                    <span className="text-sm text-gray-500 ml-2">{expense.date}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
                                     <span className="font-medium text-red-500">
                                         {formatCurrency(expense.amount)}
                                     </span>
+                                    <button
+                                        onClick={() => handleDeleteExpense(expense.id)}
+                                        className="p-2 text-red-500 hover:text-red-700"
+                                    >
+                                        <Trash2 className="h-5 w-5" />
+                                    </button>
                                 </div>
-                            ))}
+                            </div>
+                        ))}
                         </div>
                     </div>
                 </CardContent>
