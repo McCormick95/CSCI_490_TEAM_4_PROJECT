@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'; 
 import PropTypes from 'prop-types';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ export const BudgetPage = ({ onBack }) => {
     const [availableCategories, setAvailableCategories] = useState([]);
     const [remainingAmount, setRemainingAmount] = useState(0);
 
+
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -40,6 +41,21 @@ export const BudgetPage = ({ onBack }) => {
         fetchCategories();
     }, []);
 
+    // filter budgets
+    useEffect(() => {
+        if (selectedCategory) {
+            const filtered = budgets.filter(budget => {
+                return budget.categories?.some(cat => 
+                    cat.catId === parseInt(selectedCategory)
+                );
+            });
+            setFilteredBudgets(filtered);
+        } else {
+            setFilteredBudgets(budgets);
+        }
+    }, [selectedCategory, budgets]);
+
+
     useEffect(() => {
         const totalAllocated = formData.categories.reduce((sum, cat) => sum + (Number(cat.amount) || 0), 0);
         const remaining = Number(formData.monthIncome) - totalAllocated;
@@ -49,48 +65,23 @@ export const BudgetPage = ({ onBack }) => {
     const loadBudgets = async () => {
         try {
             setIsLoading(true);
-            let budgetsToLoad;
+            const userBudgetResponse = await fetch(`/api/userbudget/${user.userId}`);
+            if (!userBudgetResponse.ok) throw new Error('Failed to fetch user budgets');
+            const userBudgets = await userBudgetResponse.json();
     
-            if (selectedCategory) {
-                // Fetch budgets for specific category
-                const budgetCatResponse = await fetch(`/api/budgetcat/${selectedCategory}`);
-                if (!budgetCatResponse.ok) throw new Error('Failed to fetch budgets for category');
-                const budgetCats = await budgetCatResponse.json();
+            const budgetPromises = userBudgets.map(async (userBudget) => {
+                const budgetResponse = await fetch(`/api/budget/${userBudget.budgetId}`);
+                const budget = await budgetResponse.json();
     
-                // Get full budget details for each budget-category relationship
-                const budgetPromises = budgetCats.map(async (budgetCat) => {
-                    const budgetResponse = await fetch(`/api/budget/${budgetCat.budgetId}`);
-                    const budget = await budgetResponse.json();
-                    return {
-                        ...budget,
-                        categories: [{ 
-                            catId: parseInt(selectedCategory),
-                            budgetAmount: budgetCat.budgetAmount 
-                        }]
-                    };
-                });
-                budgetsToLoad = await Promise.all(budgetPromises);
-            } else {
-                // Load all budgets
-                const userBudgetResponse = await fetch(`/api/userbudget/${user.userId}`);
-                if (!userBudgetResponse.ok) throw new Error('Failed to fetch user budgets');
-                const userBudgets = await userBudgetResponse.json();
+                const budgetCatResponse = await fetch(`/api/budgetcat/${userBudget.budgetId}`);
+                const budgetCategories = await budgetCatResponse.json();
     
-                const budgetPromises = userBudgets.map(async (userBudget) => {
-                    const budgetResponse = await fetch(`/api/budget/${userBudget.budgetId}`);
-                    const budget = await budgetResponse.json();
-    
-                    const budgetCatResponse = await fetch(`/api/budgetcat/${userBudget.budgetId}`);
-                    const budgetCategories = await budgetCatResponse.json();
-    
-                    return {
-                        ...budget,
-                        categories: budgetCategories
-                    };
-                });
-                budgetsToLoad = await Promise.all(budgetPromises);
-            }
-    
+                return {
+                    ...budget,
+                    categories: budgetCategories
+                };
+            });
+            const budgetsToLoad = await Promise.all(budgetPromises);
             setBudgets(budgetsToLoad);
             setFilteredBudgets(budgetsToLoad);
         } catch (err) {
@@ -149,64 +140,30 @@ export const BudgetPage = ({ onBack }) => {
                 throw new Error('Please enter monthly income');
             }
     
-            const budgetData = {
-                monthIncome: Number(formData.monthIncome),
-                month: Number(formData.month),
-                year: Number(formData.year)
-            };
-    
-            console.log('Sending budget data:', budgetData);
-    
-            // Create the budget first
-            const budgetResponse = await fetch('/api/budget', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(budgetData)
-            });
-    
-            if (!budgetResponse.ok) {
-                const errorText = await budgetResponse.text();
-                throw new Error(`Failed to create budget: ${errorText}`);
-            }
-    
-            const budget = await budgetResponse.json();
-            
-            // Create user-budget relationship
-            await fetch('/api/userbudget', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const response = await fetch(`/api/budget/${editingBudget ? editingBudget.budgetId : ''}`, {
+                method: editingBudget ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    userId: user.userId,
-                    budgetId: budget.budgetId
+                    monthIncome: Number(formData.monthIncome),
+                    month: Number(formData.month),
+                    year: Number(formData.year)
                 })
             });
     
-            // Only add categories if they exist
-            if (formData.categories.length > 0) {
-                for (const category of formData.categories) {
-                    if (category.categoryId && category.amount) {
-                        await fetch('/api/budgetcat', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                budgetId: budget.budgetId,
-                                catId: Number(category.categoryId),
-                                budgetAmount: Number(category.amount)
-                            })
-                        });
-                    }
-                }
+            const responseText = await response.text();
+            console.log('Response:', responseText);
+    
+            if (!response.ok) {
+                throw new Error(`Failed to ${editingBudget ? 'update' : 'create'} budget: ${responseText}`);
             }
     
+            const budget = responseText ? JSON.parse(responseText) : null;
+    
+            await loadBudgets();
             setShowCreateForm(false);
+            setEditingBudget(null);
             setFormData(initialFormData);
-            loadBudgets();
+    
         } catch (err) {
             console.error('Submit error:', err);
             setError(err.message);
@@ -241,8 +198,7 @@ export const BudgetPage = ({ onBack }) => {
         }
     };
     
-    const handleEditBudget = (budget) => {
-        // Set the form data with the budget's current values
+    const handleEditBudget = async (budget) => {
         setFormData({
             monthIncome: budget.monthIncome.toString(),
             month: budget.month,
@@ -252,6 +208,7 @@ export const BudgetPage = ({ onBack }) => {
                 amount: cat.budgetAmount.toString()
             }))
         });
+        setEditingBudget(budget);
         setShowCreateForm(true);
     };
 
@@ -323,7 +280,7 @@ export const BudgetPage = ({ onBack }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {budgets.map((budget) => (
+                                {filteredBudgets?.map((budget) => (
                                     <tr key={budget.budgetId} className="hover:bg-gray-50">
                                         <td className="p-4">{budget.month}/{budget.year}</td>
                                         <td className="p-4">${budget.monthIncome.toFixed(2)}</td>
@@ -502,7 +459,7 @@ export const BudgetPage = ({ onBack }) => {
                             onClick={handleSubmit}
                             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                         >
-                            Create Budget
+                            {editingBudget ? 'Update Budget' : 'Create Budget'}
                         </button>
                     </div>
                 </DialogContent>
