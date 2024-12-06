@@ -21,5 +21,20 @@ public class CategoryController : ControllerBase
         if (category == null) return NotFound();
         return Ok(category);
     }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Category>>> GetAllCategories()
+    {
+        try 
+        {
+            var categories = await _categoryServices.GetAllCategories();
+            return Ok(categories);
+        }
+        catch (Exception)
+        {
+            return NotFound();
+        }
+    }
+
 }
 

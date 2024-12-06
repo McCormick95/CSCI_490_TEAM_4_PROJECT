@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert } from '@/components/ui/alert';
 import { X } from 'lucide-react';
-import { useEffect } from 'react'; 
-
 
 const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
     const { user } = useAuth();
@@ -20,7 +18,6 @@ const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    // Then use useEffect instead of useState for the fetch:
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -43,6 +40,10 @@ const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
         setSuccess(false);
 
         try {
+            if (!formData.amount || !formData.description || !formData.categoryId || !formData.date) {
+                throw new Error('Please fill in all fields');
+            }
+
             // Parse the date
             const dateObj = new Date(formData.date);
 
@@ -60,10 +61,14 @@ const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
                 })
             });
 
-            if (!expenseResponse.ok) throw new Error('Failed to create expense');
+            if (!expenseResponse.ok) {
+                const errorText = await expenseResponse.text();
+                throw new Error(errorText);
+            }
+
             const expenseData = await expenseResponse.json();
 
-            // Create user-expense relationship
+            // Link expense to user
             const userExpenseResponse = await fetch('/api/userexpense', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -73,7 +78,9 @@ const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
                 })
             });
 
-            if (!userExpenseResponse.ok) throw new Error('Failed to link expense to user');
+            if (!userExpenseResponse.ok) {
+                throw new Error('Failed to link expense to user');
+            }
 
             setSuccess(true);
             setFormData({
@@ -85,7 +92,7 @@ const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
             onExpenseAdded();
         } catch (err) {
             console.error('Error adding expense:', err);
-            setError('Failed to add expense. Please try again.');
+            setError(err.message || 'Failed to add expense. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -170,13 +177,13 @@ const AddExpenseForm = ({ onExpenseAdded, onClose }) => {
                     </div>
 
                     {error && (
-                        <Alert variant="destructive" className="mt-4">
+                        <Alert variant="destructive">
                             {error}
                         </Alert>
                     )}
 
                     {success && (
-                        <Alert className="mt-4 bg-green-50 text-green-700">
+                        <Alert className="bg-green-50 text-green-700">
                             Expense added successfully!
                         </Alert>
                     )}

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; 
 import PropTypes from 'prop-types';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     BarChart,
@@ -18,7 +18,64 @@ import { AddExpenseForm } from "@/features/dashboard/AddExpenseForm";
 export const ExpensesPage = ({ onBack }) => {
     const { expenseData, loading, error, refetch } = useExpenseData();
     const [showAddForm, setShowAddForm] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [filteredExpenses, setFilteredExpenses] = useState([]);
+    const [categories, setAvailableCategories] = useState([]);
 
+
+
+
+    const handleDeleteExpense = async (expenseId) => {
+        if (!window.confirm('Are you sure you want to delete this expense?')) {
+            return;
+        }
+    
+        try {
+            const response = await fetch(`/api/expense/${expenseId}`, {
+                method: 'DELETE',
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to delete expense');
+            }
+    
+            // Refresh the expenses list using the existing refetch function
+            refetch();
+        } catch (err) {
+            console.error('Delete error:', err);
+            setError('Failed to delete expense');
+        }
+    };
+    
+
+    useEffect(() => {
+        if (selectedCategory) {
+            const filtered = expenseData?.expenses?.filter(expense => 
+                expense.category === categories.find(c => c.catId === parseInt(selectedCategory))?.catDesc
+            );
+            setFilteredExpenses(filtered || []);
+        } else {
+            setFilteredExpenses(expenseData?.expenses || []);
+        }
+    }, [selectedCategory, expenseData, categories]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch('/api/category');
+                if (!response.ok) throw new Error('Failed to fetch categories');
+                const data = await response.json();
+                setAvailableCategories(Array.isArray(data) ? data : [data]);
+            } catch (err) {
+                console.error('Error fetching categories:', err);
+                setError('Failed to load categories');
+            }
+        };
+        fetchCategories();
+    }, []);
+
+
+    
     const handleExpenseAdded = () => {
         refetch();
         setShowAddForm(false);
@@ -31,6 +88,8 @@ export const ExpensesPage = ({ onBack }) => {
             </div>
         );
     }
+
+
 
     if (error) {
         return (
@@ -60,13 +119,19 @@ export const ExpensesPage = ({ onBack }) => {
                     </button>
                     <h2 className="text-2xl font-bold">Expense Analysis</h2>
                 </div>
-                <button
-                    onClick={() => setShowAddForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                    <Plus className="h-5 w-5" />
-                    Add Expense
-                </button>
+                
+
+
+
+
+
+
+
+
+
+
+
+
             </div>
 
             {showAddForm && (
@@ -121,25 +186,55 @@ export const ExpensesPage = ({ onBack }) => {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
+                    <button
+                    onClick={() => setShowAddForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                    <Plus className="h-5 w-5" />
+                    Add Expense
+                </button>
+                    <div className="flex items-center gap-4">
+                                    <select
+                                        className="p-2 border rounded"
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                    >
+                                        <option value="">All Categories</option>
+                                        {categories.map(category => (
+                                            <option key={category.catId} value={category.catId}>
+                                                {category.catDesc}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
                     <div className="mt-6">
                         <h3 className="font-semibold mb-2">Recent Expenses</h3>
                         <div className="space-y-2">
-                            {expenseData?.expenses?.map((expense) => (
-                                <div
-                                    key={expense.id}
-                                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                                >
-                                    <div>
-                                        <span className="font-medium">{expense.description}</span>
-                                        <span className="text-sm text-gray-500 ml-2">({expense.category})</span>
-                                        <span className="text-sm text-gray-500 ml-2">{expense.date}</span>
-                                    </div>
+                        {filteredExpenses.map((expense) => (
+                            <div
+                                key={expense.id}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                            >
+                                <div>
+                                    <span className="font-medium">{expense.description}</span>
+                                    <span className="text-sm text-gray-500 ml-2">({expense.category})</span>
+                                    <span className="text-sm text-gray-500 ml-2">{expense.date}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
                                     <span className="font-medium text-red-500">
                                         {formatCurrency(expense.amount)}
                                     </span>
+                                    <button
+                                        onClick={() => handleDeleteExpense(expense.id)}
+                                        className="p-2 text-red-500 hover:text-red-700"
+                                    >
+                                        <Trash2 className="h-5 w-5" />
+                                    </button>
                                 </div>
-                            ))}
+                    
+                            </div>
+                        ))}
                         </div>
                     </div>
                 </CardContent>

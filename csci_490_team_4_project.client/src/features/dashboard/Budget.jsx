@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'; 
 import PropTypes from 'prop-types';
-import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useBudgetData } from '@/hooks/useBudgetData';
+import { Alert } from '@/components/ui/alert';
+import { useAuth } from '@/context/AuthContext';
 
-// Initial form data
 const initialFormData = {
     monthIncome: '',
     month: new Date().getMonth() + 1,
@@ -13,104 +13,95 @@ const initialFormData = {
     categories: []
 };
 
-// BudgetRow component for displaying individual budget entries
-const BudgetRow = ({ budget, isExpanded, onToggle }) => {
-    const formatCurrency = (amount) => {
-        const safeAmount = Number(amount) || 0;
-        return `$${safeAmount.toFixed(2)}`;
-    };
-
-    return (
-        <>
-            <tr
-                className="hover:bg-gray-50 cursor-pointer"
-                onClick={onToggle}
-            >
-                <td className="p-4 flex items-center gap-2">
-                    {isExpanded ? (
-                        <ChevronDown className="h-4 w-4" />
-                    ) : (
-                        <ChevronRight className="h-4 w-4" />
-                    )}
-                    {budget.month}/{budget.year}
-                </td>
-                <td className="p-4">{formatCurrency(budget.monthIncome)}</td>
-                <td className="p-4">{formatCurrency(budget.allocatedAmount)}</td>
-                <td className="p-4">{formatCurrency(budget.remainingAmount)}</td>
-            </tr>
-            {isExpanded && (
-                <tr>
-                    <td colSpan="4" className="bg-gray-50 p-4">
-                        <div className="ml-6">
-                            <h4 className="font-semibold mb-2">Category Breakdown</h4>
-                            <div className="space-y-2">
-                                {budget.categories.map((category) => (
-                                    <div
-                                        key={category.categoryId}
-                                        className="flex items-center justify-between p-2 bg-white rounded shadow-sm"
-                                    >
-                                        <span>{category.name}</span>
-                                        <span className="font-medium">
-                                            {formatCurrency(category.amount)}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            )}
-        </>
-    );
-};
-
-BudgetRow.propTypes = {
-    budget: PropTypes.shape({
-        month: PropTypes.number.isRequired,
-        year: PropTypes.number.isRequired,
-        monthIncome: PropTypes.number.isRequired,
-        allocatedAmount: PropTypes.number.isRequired,
-        remainingAmount: PropTypes.number.isRequired,
-        categories: PropTypes.arrayOf(
-            PropTypes.shape({
-                categoryId: PropTypes.number.isRequired,
-                name: PropTypes.string.isRequired,
-                amount: PropTypes.number.isRequired,
-            })
-        ).isRequired,
-    }).isRequired,
-    isExpanded: PropTypes.bool.isRequired,
-    onToggle: PropTypes.func.isRequired,
-};
-
 export const BudgetPage = ({ onBack }) => {
-    const { budgetData, loading, error } = useBudgetData();
-    const [expandedBudgetId, setExpandedBudgetId] = useState(null);
+    const { user } = useAuth();
+    const [budgets, setBudgets] = useState([]);
+    const [filteredBudgets, setFilteredBudgets] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [availableCategories, setAvailableCategories] = useState([]);
     const [formData, setFormData] = useState(initialFormData);
+    const [availableCategories, setAvailableCategories] = useState([]);
     const [remainingAmount, setRemainingAmount] = useState(0);
+
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const response = await fetch('/api/category');
-                if (response.ok) {
-                    const data = await response.json();
-                    setAvailableCategories(Array.isArray(data) ? data : [data]);
-                }
-            } catch (error) {
-                console.error('Error fetching categories:', error);
+                if (!response.ok) throw new Error('Failed to fetch categories');
+                const data = await response.json();
+                setAvailableCategories(Array.isArray(data) ? data : [data]);
+            } catch (err) {
+                console.error('Error fetching categories:', err);
+                setError('Failed to load categories');
             }
         };
         fetchCategories();
     }, []);
+
+    // filter budgets
+    useEffect(() => {
+        if (selectedCategory) {
+            const filtered = budgets.filter(budget => {
+                return budget.categories?.some(cat => 
+                    cat.catId === parseInt(selectedCategory)
+                );
+            });
+            setFilteredBudgets(filtered);
+        } else {
+            setFilteredBudgets(budgets);
+        }
+    }, [selectedCategory, budgets]);
+
 
     useEffect(() => {
         const totalAllocated = formData.categories.reduce((sum, cat) => sum + (Number(cat.amount) || 0), 0);
         const remaining = Number(formData.monthIncome) - totalAllocated;
         setRemainingAmount(remaining);
     }, [formData.monthIncome, formData.categories]);
+
+    const loadBudgets = async () => {
+        try {
+            setIsLoading(true);
+            const userBudgetResponse = await fetch(`/api/userbudget/${user.userId}`);
+            if (!userBudgetResponse.ok) throw new Error('Failed to fetch user budgets');
+            const userBudgets = await userBudgetResponse.json();
+    
+            const budgetPromises = userBudgets.map(async (userBudget) => {
+                const budgetResponse = await fetch(`/api/budget/${userBudget.budgetId}`);
+                const budget = await budgetResponse.json();
+    
+                const budgetCatResponse = await fetch(`/api/budgetcat/${userBudget.budgetId}`);
+                const budgetCategories = await budgetCatResponse.json();
+    
+                return {
+                    ...budget,
+                    categories: budgetCategories
+                };
+            });
+            const budgetsToLoad = await Promise.all(budgetPromises);
+            setBudgets(budgetsToLoad);
+            setFilteredBudgets(budgetsToLoad);
+        } catch (err) {
+            console.error('Load error:', err);
+            setError('Error loading budgets');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    const handleCategoryFilter = (categoryId) => {
+        setSelectedCategory(categoryId);
+    };
+
+    useEffect(() => {
+        if (user) {
+            loadBudgets();
+        }
+    }, [user, selectedCategory]); // Add selectedCategory here
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -144,14 +135,13 @@ export const BudgetPage = ({ onBack }) => {
     };
 
     const handleSubmit = async () => {
-        if (!formData.monthIncome || formData.categories.length === 0) {
-            alert('Please fill in all required fields');
-            return;
-        }
-
         try {
-            const budgetResponse = await fetch('/api/budget', {
-                method: 'POST',
+            if (!formData.monthIncome) {
+                throw new Error('Please enter monthly income');
+            }
+    
+            const response = await fetch(`/api/budget/${editingBudget ? editingBudget.budgetId : ''}`, {
+                method: editingBudget ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     monthIncome: Number(formData.monthIncome),
@@ -159,66 +149,77 @@ export const BudgetPage = ({ onBack }) => {
                     year: Number(formData.year)
                 })
             });
-
-            if (!budgetResponse.ok) throw new Error('Failed to create budget');
-            const budgetData = await budgetResponse.json();
-
-            // Create budget categories
-            for (const category of formData.categories) {
-                await fetch('/api/budgetcat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        budgetId: budgetData.budgetId,
-                        catId: Number(category.categoryId),
-                        budgetAmount: Number(category.amount)
-                    })
-                });
+    
+            const responseText = await response.text();
+            console.log('Response:', responseText);
+    
+            if (!response.ok) {
+                throw new Error(`Failed to ${editingBudget ? 'update' : 'create'} budget: ${responseText}`);
             }
-
+    
+            const budget = responseText ? JSON.parse(responseText) : null;
+    
+            await loadBudgets();
             setShowCreateForm(false);
+            setEditingBudget(null);
             setFormData(initialFormData);
-            // Refresh the budgets list (you might need to implement this in useBudgetData)
-        } catch (error) {
-            console.error('Error creating budget:', error);
-            alert('Failed to create budget. Please try again.');
+    
+        } catch (err) {
+            console.error('Submit error:', err);
+            setError(err.message);
         }
     };
+    
 
-    if (loading) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
-                        <ArrowLeft className="h-6 w-6" />
-                    </button>
-                    <h2 className="text-2xl font-bold">Budget Details</h2>
-                </div>
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex justify-center items-center h-32">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
-    if (error) {
+    const handleDeleteBudget = async (budgetId) => {
+        console.log('Attempting to delete budget:', budgetId);
+        if (!window.confirm('Are you sure you want to delete this budget?')) {
+            return;
+        }
+    
+        try {
+            const response = await fetch(`/api/budget/${budgetId}`, {
+                method: 'DELETE',
+            });
+    
+            const responseText = await response.text();
+            console.log('Delete response:', response.status, responseText);
+    
+            if (!response.ok) {
+                throw new Error(`Failed to delete budget: ${responseText}`);
+            }
+    
+            // Refresh the budgets list
+            loadBudgets();
+        } catch (err) {
+            console.error('Delete error:', err);
+            setError(err.message);
+        }
+    };
+    
+    const handleEditBudget = async (budget) => {
+        setFormData({
+            monthIncome: budget.monthIncome.toString(),
+            month: budget.month,
+            year: budget.year,
+            categories: budget.categories.map(cat => ({
+                categoryId: cat.catId,
+                amount: cat.budgetAmount.toString()
+            }))
+        });
+        setEditingBudget(budget);
+        setShowCreateForm(true);
+    };
+
+    const [editingBudget, setEditingBudget] = useState(null);
+
+
+
+    if (isLoading) {
         return (
-            <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full">
-                        <ArrowLeft className="h-6 w-6" />
-                    </button>
-                    <h2 className="text-2xl font-bold">Budget Details</h2>
-                </div>
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="text-red-500 text-center">Error: {error}</div>
-                    </CardContent>
-                </Card>
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
             </div>
         );
     }
@@ -236,9 +237,33 @@ export const BudgetPage = ({ onBack }) => {
                     onClick={() => setShowCreateForm(true)}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                 >
+                    <Plus className="h-5 w-5" />
                     <span>Create New Budget</span>
                 </button>
             </div>
+
+            
+            <div className="flex items-center gap-4">
+                <select
+                    className="p-2 border rounded"
+                    value={selectedCategory}
+                    onChange={(e) => handleCategoryFilter(e.target.value)}
+                >
+                    <option value="">All Categories</option>
+                    {availableCategories.map(category => (
+                        <option key={category.catId} value={category.catId}>
+                            {category.catDesc}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+
+            {error && (
+                <Alert variant="destructive">
+                    {error}
+                </Alert>
+            )}
 
             <Card>
                 <CardHeader>
@@ -251,20 +276,45 @@ export const BudgetPage = ({ onBack }) => {
                                 <tr className="border-b">
                                     <th className="text-left p-4">Period</th>
                                     <th className="text-left p-4">Monthly Income</th>
-                                    <th className="text-left p-4">Allocated</th>
-                                    <th className="text-left p-4">Remaining</th>
+                                    <th className="text-left p-4">Categories</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {budgetData?.budgets?.map((budget) => (
-                                    <BudgetRow
-                                        key={budget.budgetId}
-                                        budget={budget}
-                                        isExpanded={expandedBudgetId === budget.budgetId}
-                                        onToggle={() => setExpandedBudgetId(
-                                            expandedBudgetId === budget.budgetId ? null : budget.budgetId
-                                        )}
-                                    />
+                                {filteredBudgets?.map((budget) => (
+                                    <tr key={budget.budgetId} className="hover:bg-gray-50">
+                                        <td className="p-4">{budget.month}/{budget.year}</td>
+                                        <td className="p-4">${budget.monthIncome.toFixed(2)}</td>
+                                        <td className="p-4">
+                                            {budget.categories?.map((cat, index) => (
+                                                <div key={index} className="text-sm text-gray-600">
+                                                    {availableCategories.find(c => c.catId === cat.catId)?.catDesc || 'Unknown'}: 
+                                                    ${cat.budgetAmount.toFixed(2)}
+                                                </div>
+                                            ))}
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditBudget(budget);
+                                                    }}
+                                                    className="p-2 text-blue-500 hover:text-blue-700"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteBudget(budget.budgetId);
+                                                    }}
+                                                    className="p-2 text-red-500 hover:text-red-700"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 ))}
                             </tbody>
                         </table>
@@ -292,6 +342,7 @@ export const BudgetPage = ({ onBack }) => {
                                 onChange={handleInputChange}
                             />
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <label htmlFor="month" className="text-right">
                                 Month
@@ -310,6 +361,7 @@ export const BudgetPage = ({ onBack }) => {
                                 ))}
                             </select>
                         </div>
+
                         <div className="grid grid-cols-4 items-center gap-4">
                             <label htmlFor="year" className="text-right">
                                 Year
@@ -395,6 +447,7 @@ export const BudgetPage = ({ onBack }) => {
                             )}
                         </div>
                     </div>
+
                     <div className="flex justify-end gap-4 mt-4">
                         <button
                             onClick={() => setShowCreateForm(false)}
@@ -406,7 +459,7 @@ export const BudgetPage = ({ onBack }) => {
                             onClick={handleSubmit}
                             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                         >
-                            Create Budget
+                            {editingBudget ? 'Update Budget' : 'Create Budget'}
                         </button>
                     </div>
                 </DialogContent>
